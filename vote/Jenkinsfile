@@ -1,0 +1,72 @@
+pipeline {
+
+  agent none
+
+  stages{
+      stage("build"){
+        when{
+            changeset "**/vote/**"
+          }
+
+        // agent{
+        //   docker{
+        //     image 'maven:3.6.1-jdk-8-slim'
+        //     args '-v $HOME/.m2:/root/.m2'
+        //   }
+        // }
+
+
+        steps{
+          echo 'Compiling vote app..'
+          dir('vote'){
+            sh "docker build . -t paulkrix/vote:v${env.BUILD_ID}}"
+          }
+        }
+      }
+    //   stage("package"){
+    //     when{
+    //       branch 'master'
+    //       changeset "**/vote/**"
+    //     }
+    //     agent{
+    //       docker{
+    //         image 'maven:3.6.1-jdk-8-slim'
+    //         args '-v $HOME/.m2:/root/.m2'
+    //       }
+    //     }
+    //     steps{
+    //       echo 'Packaging vote app'
+    //       dir('vote'){
+    //         sh 'mvn package -DskipTests'
+    //         archiveArtifacts artifacts: '**/target/*.jar', fingerprint: true
+    //       }
+
+    //     }
+    //   }
+
+      stage('docker-package'){
+          agent any
+          when{
+            changeset "**/vote/**"
+            branch 'master'
+          }
+          steps{
+            echo 'Packaging vote app with docker'
+            script{
+              docker.withRegistry('https://index.docker.io/v1/', 'dockerlogin') {
+                  def voteImage = docker.build("paulkrix/vote:v${env.BUILD_ID}", "./vote")
+                  voteImage.push()
+                  voteImage.push("${env.BRANCH_NAME}")
+                  voteImage.push("latest")
+              }
+            }
+          }
+      }
+  }
+
+  post{
+    always{
+        echo 'Building multibranch pipeline for vote is completed..'
+    }
+  }
+}
