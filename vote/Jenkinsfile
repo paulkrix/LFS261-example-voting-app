@@ -69,4 +69,4 @@ pipeline {
         echo 'Building multibranch pipeline for vote is completed..'
     }
   }
-}
+} 
