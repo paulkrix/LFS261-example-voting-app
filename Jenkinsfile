@@ -93,71 +93,80 @@ pipeline {
         }
       }
 
-        stage('vote-docker-package'){
-            agent any
+    stage('vote-docker-package'){
+        agent any
 
-            when {
-                changeset "**/vote/**"
-                branch 'master'
-            }
+        when {
+            changeset "**/vote/**"
+            branch 'master'
+        }
 
-            steps {
-                echo 'Packaging vote app with docker'
-                script{
-                    docker.withRegistry('https://index.docker.io/v1/', 'dockerlogin') {
-                        def voteImage = docker.build("paulkrix/vote:v${env.BUILD_ID}", "./vote")
-                        voteImage.push()
-                        voteImage.push("${env.BRANCH_NAME}")
-                        voteImage.push("latest")
-                    }
+        steps {
+            echo 'Packaging vote app with docker'
+            script{
+                docker.withRegistry('https://index.docker.io/v1/', 'dockerlogin') {
+                    def voteImage = docker.build("paulkrix/vote:v${env.BUILD_ID}", "./vote")
+                    voteImage.push()
+                    voteImage.push("${env.BRANCH_NAME}")
+                    voteImage.push("latest")
                 }
             }
         }
+    }
 
-        stage ('result-build') {
-            when {
-                changeset "**/result/**"
-            } 
-            
-            steps {
-                echo 'Compiling result app..' 
-                dir ('result') { 
-                    sh 'npm install'
-                }
-            }
-        }
+    stage ('result-build') {
+        when {
+            changeset "**/result/**"
+        } 
         
-        stage ('result-test') {
-            when { 
-                changeset "**/result/**"
-            } 
-            
-            steps {
-                echo 'Running Unit Tests on result app..'
-                dir ('result') {
-                    sh 'npm install'
-                    sh 'npm test'
+        steps {
+            echo 'Compiling result app..' 
+            dir ('result') { 
+                sh 'npm install'
+            }
+        }
+    }
+    
+    stage ('result-test') {
+        when { 
+            changeset "**/result/**"
+        } 
+        
+        steps {
+            echo 'Running Unit Tests on result app..'
+            dir ('result') {
+                sh 'npm install'
+                sh 'npm test'
+            }
+        }
+    }
+    stage('result-docker-package'){
+        agent any
+        when{
+            changeset "**/result/**"
+            branch 'master'
+        }
+        steps{
+            echo 'Packaging vote app with docker'
+            script {
+                docker.withRegistry('https://index.docker.io/v1/', 'dockerlogin') {
+                    def voteImage = docker.build("paulkrix/result:v${env.BUILD_ID}", "./result")
+                    voteImage.push()
+                    voteImage.push("${env.BRANCH_NAME}")
+                    voteImage.push("latest")
                 }
             }
         }
-        stage('result-docker-package'){
-            agent any
-            when{
-                changeset "**/result/**"
-                branch 'master'
-            }
-            steps{
-                echo 'Packaging vote app with docker'
-                script {
-                    docker.withRegistry('https://index.docker.io/v1/', 'dockerlogin') {
-                        def voteImage = docker.build("paulkrix/result:v${env.BUILD_ID}", "./result")
-                        voteImage.push()
-                        voteImage.push("${env.BRANCH_NAME}")
-                        voteImage.push("latest")
-                    }
-                }
-            }
-        }
+    }
+    stage('deploy-to-dev') :
+    agent any
+    when {
+      branch 'master'
+    }
+    steps {
+      echo 'Deploy instavote app with docker compose'
+      sh 'docker-compose up -d'
+    }
 
   }
 
