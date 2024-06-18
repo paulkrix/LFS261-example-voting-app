@@ -80,18 +80,18 @@ pipeline {
         }
     }
 
-    stage("vote-build"){
-      when{
-          changeset "**/vote/**"
-        }
+    // stage("vote-build"){
+    //   when{
+    //       changeset "**/vote/**"
+    //     }
 
-      steps{
-        echo 'Compiling vote app..'
-        dir('vote'){
-          sh "docker build . -t paulkrix/vote:v${env.BUILD_ID}}"
-        }
-      }
-    }
+    //   steps{
+    //     echo 'Compiling vote app..'
+    //     dir('vote'){
+    //       sh "docker build . -t paulkrix/vote:v${env.BUILD_ID}}"
+    //     }
+    //   }
+    // }
 
     stage('vote-integration') {
       agent any
