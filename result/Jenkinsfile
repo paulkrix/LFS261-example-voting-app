@@ -35,7 +35,7 @@ pipeline {
         stage('docker-package'){
             agent any
             when{
-                changeset "**/result/**"
+                // changeset "**/result/**"
                 branch 'master'
             }
             steps{
