@@ -208,12 +208,13 @@ pipeline {
       agent any
       environment{
         def GIT_COMMIT = "${env.GIT_COMMIT}"
+        def GIT_COMMIT = "v${env.BUILD_ID}"
       }
       steps{
         echo "${GIT_COMMIT}"
         echo "triggering deployment"
         // passing variables to job deployment run by vote-deploy repository Jenkinsfile
-        build job: 'deployment', parameters: [string(name: 'DOCKERTAG', value: GIT_COMMIT)]
+        build job: 'deployment', parameters: [string(name: 'DOCKERTAG', value: ${env.BUILD_ID})]
       }    
    }
   }
